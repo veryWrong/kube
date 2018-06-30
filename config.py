@@ -1,6 +1,5 @@
 import os
 from kubernetes import config
-from app.pods import pods
 
 path = os.path.dirname(os.path.abspath(__file__))
 
@@ -12,7 +11,8 @@ class Config(object):
 class DevConfig(Config):
     DEBUG = True
     config.load_kube_config(path+'/config')
-    # SQLALCHEMY_DATABASE_URI = "mysql+pymysql://root:root@127.0.0.1:3306/forward"
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(path, 'kube.db')
+    SQLALCHEMY_TRACK_MODIFICATIONS = True
 
 
 
