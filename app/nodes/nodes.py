@@ -3,7 +3,7 @@ from flask import jsonify
 from . import node
 
 
-@node.route('/list', methods=['GET'])
+@node.route('/', methods=['GET'])
 def node_list():
     v1 = client.CoreV1Api()
     ret = v1.list_node()

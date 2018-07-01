@@ -63,3 +63,15 @@ def login():
         })
     else:
         return jsonify({'code': 500, 'msg': '密码错误', 'data': {}})
+
+
+@user.route('/list', methods=['GET', ])
+def user_list():
+    user_data = User.query.all()
+    return jsonify({'code': 200, 'msg': 'ok', 'data': [{
+        'id': u.id,
+        'username': u.username,
+        'email': u.email,
+        'role': u.role,
+        'create_date': u.create_date.strftime("%Y-%m-%d %H:%M:%S"),
+    } for u in user_data]})
