@@ -31,5 +31,6 @@ def make_shell_context():
 def index():
     return jsonify({'code': 200, 'msg': '项目启动成功', 'data': []})
 
+
 if __name__ == "__main__":
     manager.run()
