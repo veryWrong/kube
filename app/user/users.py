@@ -1,19 +1,41 @@
 from kubernetes import client
 from kubernetes.client.rest import ApiException
 from flask import jsonify, request, abort
+from flask_login import login_user, login_required, logout_user
 from sqlalchemy import or_
+from app import login_manager
 from model.model import User
 from manage import db
 from utils.utils import check_key
 from . import user
 
 
+# @login_manager.user_loader
+# def load_user(user_id):
+#     return User.query.get(int(user_id))
+
+
+@login_manager.request_loader
+def load_user_from_request(request):
+    api_key = request.headers.get('Authorization')
+    if api_key:
+        api_key = api_key.replace('Basic ', '', 1)
+        try:
+            user = User.verify_auth_token(api_key)
+            return user
+        except TypeError:
+            pass
+    return None
+
+
+@login_manager.unauthorized_handler
+def unauthorized_handler():
+    return jsonify({'code': 401, 'msg': '请先登录'})
+
+
 @user.route('/register', methods=['POST', ])
 def register():
     if request.json and request.method == 'POST':
-        # username = request.json['username']
-        # password = request.json['password']
-        # email = request.json['email']
         data = request.get_json()
         email = check_key('email', data)
         if data['username'] is None or data['password'] is None:
@@ -49,8 +71,11 @@ def login():
     name = data['username']
     user_data = db.session.query(User).filter(or_(User.email == name, User.username == name)).first()
     if user_data is None:
-        return jsonify({'code': 500, 'msg': '密码错误', 'data': {}})
+        return jsonify({'code': 500, 'msg': '用户不存在', 'data': {}})
     if user_data.verify_password(password=data['password']):
+        token = user_data.generate_auth_token()
+        # remember = check_key('remember', data, False)
+        # login_user(user_data, remember)
         return jsonify({
             'code': 200,
             'msg': '登录成功',
@@ -59,13 +84,22 @@ def login():
                 'name': user_data.username,
                 'email': user_data.email,
                 'role': user_data.role,
+                'token': token.decode('ascii'),
             }
         })
     else:
         return jsonify({'code': 500, 'msg': '密码错误', 'data': {}})
 
 
+@user.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return jsonify({'code': 200, 'msg': '退出成功', 'data': {}})
+
+
 @user.route('/list', methods=['GET', ])
+@login_required
 def user_list():
     user_data = User.query.all()
     return jsonify({'code': 200, 'msg': 'ok', 'data': [{

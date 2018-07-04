@@ -1,9 +1,11 @@
 from kubernetes import client
 from flask import jsonify
+from flask_login import login_required
 from . import pod
 
 
 @pod.route('/', methods=['GET', ])
+@login_required
 def index():
     v1 = client.CoreV1Api()
     ret = v1.list_pod_for_all_namespaces(watch=False)
