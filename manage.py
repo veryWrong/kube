@@ -2,6 +2,7 @@ from flask_script import Manager, Server
 from flask_sqlalchemy import SQLAlchemy
 from flask import jsonify
 from app import init_app
+from app.deploy import deploy
 from app.pods import pod
 from app.user import user
 from app.nodes import node
@@ -11,6 +12,7 @@ app = init_app()
 app.register_blueprint(pod, url_prefix='/pod')
 app.register_blueprint(user, url_prefix='/user')
 app.register_blueprint(node, url_prefix='/node')
+app.register_blueprint(deploy, url_prefix='/deploy')
 db = SQLAlchemy(app)
 
 from model.model import *

@@ -30,13 +30,12 @@ def node_count():
 
 
 @node.route("/list", methods=['GET'])
-@login_required
+# @login_required
 def node_list():
     v1 = client.CoreV1Api()
     ret = v1.list_node()
     data = request.get_json()
     state = check_key('state', data)
-    print(state)
     if state is not None and state == 'online':
         res = []
         for item in ret.items:
@@ -49,9 +48,12 @@ def node_list():
                 res.append(item)
     else:
         res = ret.items
-        print(res)
-    return jsonify({'code': 200, 'msg': 'ok', 'data': data})
-    # return jsonify({'code': 200, 'msg': 'ok', 'data': [{
-    #     'name': i.metadata.name,
-    #     'ip': [m for m in i.status.addresses if m.type == 'InternalIP'],
-    # } for i in res]})
+    return jsonify({'code': 200, 'msg': 'ok', 'data': [{
+        'name': i.metadata.name,
+        'ip': i.status.addresses[0].address,
+        'image': i.status.node_info.os_image,
+        'version': i.status.node_info.kernel_version,
+        'cpu': i.status.allocatable['cpu'],
+        'memory': int(i.status.allocatable['memory'][0:-2]) / 1024 / 1024,
+        'create_time': i.metadata.creation_timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+    } for i in res]})
