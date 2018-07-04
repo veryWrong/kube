@@ -7,7 +7,9 @@ def check_key(key, data, default=None):
     :param default: mixed
     :return: mixed
     """
-    if key in data.keys():
-        return data[key]
-    else:
-        return (None, default)[default is not None]
+    if isinstance(data, dict):
+        if key in data.keys():
+            return data[key]
+        else:
+            return (None, default)[default is not None]
+    return None
