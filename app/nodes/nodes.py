@@ -10,7 +10,6 @@ from . import node
 def node_count():
     v1 = client.CoreV1Api()
     ret = v1.list_node()
-    print(ret)
     count = len(ret.items)
     online, offline, unknown = 0, 0, 0
     for res in ret.items:
@@ -30,7 +29,7 @@ def node_count():
 
 
 @node.route("/list", methods=['GET'])
-# @login_required
+@login_required
 def node_list():
     v1 = client.CoreV1Api()
     ret = v1.list_node()
