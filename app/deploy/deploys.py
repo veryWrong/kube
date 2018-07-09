@@ -3,7 +3,6 @@ from flask import jsonify, request
 from flask_login import login_required, current_user
 from kubernetes.client.rest import ApiException
 from utils.utils import check_key
-from config import DevConfig
 from . import deploy
 
 
@@ -14,7 +13,6 @@ def create():
     v1 = client.ExtensionsV1beta1Api()
     basic = check_key('lables', data, {'app': data['name'], 'namespace': current_user.username})
     body = client.V1Deployment()
-    body.api_version = DevConfig.DEPLOY_API_VERSION
     body.kind = 'Deployment'
     body.metadata = dict(name=data['name'], namespace=current_user.username, lables=basic, annotations={
         'name': data['name'], 'namespace': current_user.username
@@ -50,5 +48,5 @@ def create():
         print(api_response)
         return jsonify({'code': 200, 'msg': '创建成功'})
     except ApiException as e:
-        print("Exception when calling AppsV1Api->create_namespaced_deployment: %s\n" % e)
-    return jsonify({'code': 500, 'msg': '创建失败'})
+        print(eval(e.body))
+        return jsonify({'code': 500, 'msg': '创建失败', 'data': eval(e.body)['message']})
