@@ -1,8 +1,8 @@
-from kubernetes import client
 from flask import jsonify, request
 from flask_login import login_required, current_user
 from kubernetes.client.rest import ApiException
-from utils.utils import check_key
+from .deployClass import Deploy
+from ..service.serviceClass import Service
 from . import deploy
 
 
@@ -10,42 +10,17 @@ from . import deploy
 @login_required
 def create():
     data = request.get_json()
-    v1 = client.ExtensionsV1beta1Api()
-    basic = check_key('lables', data, {'app': data['name'], 'namespace': current_user.username})
-    body = client.V1Deployment()
-    body.kind = 'Deployment'
-    body.metadata = dict(name=data['name'], namespace=current_user.username, lables=basic, annotations={
-        'name': data['name'], 'namespace': current_user.username
-    })
-    body.spec = {'replicas': check_key('replicas', data, 1), 'selector': {
-        'matchLabels': basic,
-    }, 'template': {
-        'metadata': {
-            'labels': basic,
-        },
-        'spec': {
-            'containers': [
-                {
-                    'name': data['name'],
-                    'image': data['image'],
-                    'command': check_key('command', data, []),
-                    'ports': check_key('ports', data, None),  # [{"containerPort": 80, "protocol": "TCP"}]
-                    'resources': {
-                        # requests资源的最小申请量，limits资源最大允许使用量
-                        'requests': check_key('requests', data, {'cpu': '0.05', 'memory': '16Mi'}),
-                        'limits': check_key('limits', data, {'cpu': '1', 'memory': '1Gi'}),
-                    },
-                    'imagePullPolicy': check_key('imagePullPolicy', data, 'IfNotPresent'),
-                    'restartPolicy': check_key('restartPolicy', data, 'Always'),
-                    'env': check_key('env', data, None),  # [{"name": "MYSQL_SERVICE_HOST", "value": "mysql"}]
-                }
-            ]
-        }
-    }}
-    # print(body)
+    deploy = Deploy(data=data)
+    deploy.body.metadata = deploy.deploy_metadata()
+    deploy.body.spec = deploy.deploy_spec()
+    service = Service(data=data)
+    service.body.metadata = service.service_metadata()
+    service.body.spec = service.service_spec()
     try:
-        api_response = v1.create_namespaced_deployment(current_user.username, body, pretty=True)
-        print(api_response)
+        deploy_api_res = deploy.api_client.create_namespaced_deployment(current_user.username, deploy.body, pretty=True)
+        print(deploy_api_res)
+        service_api_res = service.api_client.create_namespaced_service(current_user.username, service.body, pretty=True)
+        print(service_api_res)
         return jsonify({'code': 200, 'msg': '创建成功'})
     except ApiException as e:
         print(eval(e.body))
