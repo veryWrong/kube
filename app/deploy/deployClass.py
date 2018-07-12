@@ -1,9 +1,9 @@
 from kubernetes import client
-from flask_login import login_required, current_user
-from utils.utils import check_key
+from datetime import datetime
+from flask_login import current_user
+from utils.utils import check_key, check_key_raise
 
 
-@login_required
 class Deploy(object):
     def __init__(self, api_client=None, body=None, data=None):
         if api_client is None:
@@ -15,14 +15,20 @@ class Deploy(object):
         self.data = data
         self.api_client = api_client
         self.body = body
-        self.basic = check_key('lables', data, {'app': data['name'], 'namespace': current_user.username})
+        self.username = current_user.username
+        self.basic = check_key('lables', data, {'app': check_key('name', data), 'namespace': self.username})
 
     def deploy_metadata(self):
+        check_key_raise('name', self.data)
         self.body.metadata = {
             'name': self.data['name'],
-            'namespace': current_user.username,
+            'namespace': self.username,
             'lables': self.basic,
-            'annotations': {'name': self.data['name'], 'namespace': current_user.username}
+            'annotations': {
+                'name': self.data['name'],
+                'namespace': self.username,
+                'create_date': datetime.now()
+            }
         }
         return self.body.metadata
 
@@ -58,3 +64,12 @@ class Deploy(object):
             }
         }
         return self.body.spec
+
+    def get_list(self):
+        deploys = self.api_client.list_namespaced_deployment(self.username)
+        return deploys
+
+    def delete(self, name):
+        body = client.V1DeleteOptions(propagation_policy='Foreground', grace_period_seconds=5)
+        res = self.api_client.delete_namespaced_deployment(name=name, namespace=self.username, body=body, pretty='true')
+        return res

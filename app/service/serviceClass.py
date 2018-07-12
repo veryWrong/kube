@@ -1,9 +1,8 @@
 from kubernetes import client
-from flask_login import login_required, current_user
+from flask_login import current_user
 from utils.utils import check_key, check_key_raise
 
 
-@login_required
 class Service(object):
     def __init__(self, api_client=None, body=None, data=None):
         if api_client is None:
@@ -15,14 +14,16 @@ class Service(object):
         self.data = data
         self.api_client = api_client
         self.body = body
-        self.basic = check_key('lables', data, {'app': data['name'], 'namespace': current_user.username})
+        self.username = current_user.username
+        self.basic = check_key('lables', data, {'app': check_key('name', data), 'namespace': self.username})
 
     def service_metadata(self):
+        check_key_raise('name', self.data)
         self.body.metadata = {
             'name': self.data['name'],
-            'namespace': current_user.username,
+            'namespace': self.username,
             'lables': self.basic,
-            'annotations': {'name': self.data['name'], 'namespace': current_user.username}
+            'annotations': {'name': self.data['name'], 'namespace': self.username}
         }
         return self.body.metadata
 
@@ -37,3 +38,8 @@ class Service(object):
             type=(None, "NodePort")[nodePort is not None]
         )
         return self.body.spec
+
+    def delete(self, name):
+        body = client.V1DeleteOptions(propagation_policy='Foreground', grace_period_seconds=5)
+        res = self.api_client.delete_namespaced_service(name=name, namespace=self.username, body=body, pretty='true')
+        return res

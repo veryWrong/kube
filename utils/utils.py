@@ -18,7 +18,7 @@ def check_key(key, data, default=None):
 def check_key_raise(key, data):
     if isinstance(data, dict):
         if key in data.keys():
-            return True
+            return data[key]
         else:
             raise Exception("'" + data.__str__() + "'object has no attribute'" + key + "'")
     raise Exception("'" + data.__str__ + "'object is not dict")
