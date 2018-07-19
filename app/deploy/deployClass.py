@@ -5,6 +5,10 @@ from utils.utils import check_key, check_key_raise
 
 
 class Deploy(object):
+    DeploymentAvailable = 'Available'  # 可用
+    DeploymentProgressing = 'Progressing'  # 创建中
+    DeploymentReplicaFailure = 'DeploymentReplicaFailure'  # 创建失败
+
     def __init__(self, api_client=None, body=None, data=None):
         if api_client is None:
             api_client = client.ExtensionsV1beta1Api()
@@ -71,5 +75,9 @@ class Deploy(object):
 
     def delete(self, name):
         body = client.V1DeleteOptions(propagation_policy='Foreground', grace_period_seconds=5)
-        res = self.api_client.delete_namespaced_deployment(name=name, namespace=self.username, body=body, pretty='true')
+        res = self.api_client.delete_namespaced_deployment(name, self.username, body, pretty='true')
         return res
+
+    def detail(self, name):
+        data = self.api_client.read_namespaced_deployment(name, self.username, pretty='true')
+        return data
