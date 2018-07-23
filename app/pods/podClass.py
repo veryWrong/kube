@@ -19,7 +19,9 @@ class Pod(object):
 
     def exec(self):
         name = 'flaskdeploy-55c586b7bb-cc5wv'
-        res = self.api_client.connect_post_namespaced_pod_exec(name, self.username, tty=True)
+        res = self.api_client.connect_post_namespaced_pod_exec(
+            name, self.username, command='/bin/bash', stdin='true', tty='true'
+        )
         return res
 
     def detail(self, name):
