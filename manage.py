@@ -1,6 +1,7 @@
 from flask_script import Manager, Server
 from flask_sqlalchemy import SQLAlchemy
 from flask import jsonify
+from flask_socketio import SocketIO
 from app import init_app
 from app.deploy import deploy
 from app.pods import pod
@@ -9,6 +10,8 @@ from app.nodes import node
 
 
 app = init_app()
+socketio = SocketIO()
+socketio.init_app(app)
 app.register_blueprint(pod, url_prefix='/pod')
 app.register_blueprint(user, url_prefix='/user')
 app.register_blueprint(node, url_prefix='/node')
@@ -35,4 +38,5 @@ def index():
 
 
 if __name__ == "__main__":
-    manager.run()
+    # manager.run()
+    socketio.run(app, debug=True, host='0.0.0.0', port=5050)
