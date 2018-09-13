@@ -81,3 +81,8 @@ class Deploy(object):
     def detail(self, name):
         data = self.api_client.read_namespaced_deployment(name, self.username, pretty='true')
         return data
+
+    def set_scale(self, name, replicas):
+        deploy = self.detail(name)
+        deploy.spec.replicas = replicas
+        return self.api_client.patch_namespaced_deployment_scale(name, self.username, deploy)

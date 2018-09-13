@@ -95,3 +95,12 @@ def get_detail(name):
         return jsonify({'code': 200, 'msg': 'ok', 'data': pod_detail})
     except ApiException as e:
         return jsonify({'code': 500, 'msg': 'error', 'data': eval(e.body)['message']})
+
+@deploy.route('/set_scale/<string:name>/<int:replicas>', methods=['GET'])
+@login_required
+def set_scale(name, replicas):
+    try:
+        res = Deploy(data={}).set_scale(name, replicas)
+        return jsonify({'code': 200, 'msg': 'ok', 'data': res})
+    except ApiException as e:
+        return jsonify({'code': 500, 'msg': 'error', 'data': eval(e.body)['message']})
