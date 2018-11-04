@@ -2,6 +2,7 @@ from flask import jsonify, request
 from flask_login import login_required, current_user
 from kubernetes.client.rest import ApiException
 from .deployClass import Deploy
+from .autoScaleClass import AutoScale
 from ..pods.podClass import Pod
 from ..service.serviceClass import Service
 from . import deploy
@@ -104,3 +105,19 @@ def set_scale(name, replicas):
         return jsonify({'code': 200, 'msg': 'ok', 'data': res})
     except ApiException as e:
         return jsonify({'code': 500, 'msg': 'error', 'data': eval(e.body)['message']})
+
+@deploy.route('/auto_scale', methods=['POST'])
+@login_required
+def auto_scale():
+    data = request.get_json()
+    autoScale = AutoScale(data=data)
+    autoScale.body.metadata = autoScale.auto_scale_metadata()
+    autoScale.body.spec = autoScale.auto_scale_spec()
+    tty = 'true'
+    try:
+        autoScale_api_res = autoScale.api_client.create_namespaced_horizontal_pod_autoscaler(current_user.username, autoScale.body, pretty=tty)
+        print(autoScale_api_res)
+        return jsonify({'code': 200, 'msg': '自动伸缩设置成功'})
+    except ApiException as e:
+        print(eval(e.body))
+        return jsonify({'code': 500, 'msg': '自动伸缩设置失败', 'data': eval(e.body)['message']})
